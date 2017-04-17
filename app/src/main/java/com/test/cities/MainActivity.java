@@ -2,11 +2,14 @@ package com.test.cities;
 
 import android.app.ProgressDialog;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -21,12 +24,19 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import static com.test.cities.DBOpenHelper.COLUMN_NAME_CITY;
+import static com.test.cities.DBOpenHelper.COLUMN_NAME_COUNTRY;
+import static com.test.cities.DBOpenHelper.COLUMN_NAME_COUNTRY_ID;
+import static com.test.cities.DBOpenHelper.TABLE_NAME_CITIES;
+import static com.test.cities.DBOpenHelper.TABLE_NAME_COUNTRIES;
+
 
 public class MainActivity extends AppCompatActivity {
 
     ProgressDialog progressDialog;
     ListView listView;
     DBOpenHelper dbOpenHelper;
+    SQLiteDatabase database;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,30 +44,32 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         listView = (ListView) findViewById(R.id.list);
-
         dbOpenHelper = new DBOpenHelper(this);
-        if (readDatabase().isEmpty()) {
+        database = dbOpenHelper.getReadableDatabase();
+        if (database.rawQuery("SELECT * FROM " + TABLE_NAME_COUNTRIES + ";", null).getCount() == 0) {
             new DownloadTask().execute();
         } else {
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, readDatabase());
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, readCountries());
             listView.setAdapter(adapter);
         }
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent intent = new Intent(MainActivity.this, CitiesActivity.class);
+                intent.putExtra("id", position + 1);
+                startActivity(intent);
+            }
+        });
     }
 
-    private ArrayList<String> readDatabase() {
-        SQLiteDatabase database = dbOpenHelper.getReadableDatabase();
+    private ArrayList<String> readCountries() {
+        Cursor cursor = database.rawQuery("SELECT * FROM " + TABLE_NAME_COUNTRIES + ";", null);
         ArrayList<String> arrayList = new ArrayList<>();
-        Cursor cursor = database.query(dbOpenHelper.TABLE_NAME_COUNTRIES,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null);
         while (cursor.moveToNext()) {
-            arrayList.add(cursor.getString(1));
+            arrayList.add(cursor.getString(cursor.getColumnIndex(COLUMN_NAME_COUNTRY)));
         }
         cursor.close();
+        System.out.println(database.rawQuery("SELECT * FROM " + TABLE_NAME_CITIES + ";", null).getCount());
         return arrayList;
     }
 
@@ -73,9 +85,8 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected Void doInBackground(Void... params) {
-//            deleteDatabase(DBOpenHelper.DATABASE_NAME);
             try {
-                createDatabase(jsonParse(downloadJSON()));
+                jsonToDataBase(downloadJSON());
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -85,18 +96,9 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, readDatabase());
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, readCountries());
             listView.setAdapter(adapter);
             progressDialog.dismiss();
-        }
-    }
-
-    private void createDatabase(ArrayList<String> arrayCountries) {
-        SQLiteDatabase database = dbOpenHelper.getWritableDatabase();
-        for (String country : arrayCountries) {
-            ContentValues values = new ContentValues();
-            values.put(dbOpenHelper.COLUMN_NAME_COUNTRY, country);
-            database.insert(dbOpenHelper.TABLE_NAME_COUNTRIES, null, values);
         }
     }
 
@@ -118,20 +120,32 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private ArrayList<String> jsonParse(String jsonString) throws JSONException {
-        System.out.println(jsonString);
+    private void jsonToDataBase(String jsonString) throws JSONException {
         JSONObject jsonObject = new JSONObject(jsonString);
-        JSONArray namesJsonArray = jsonObject.names();
-        ArrayList<String> array = new ArrayList<>();
-        for (int i = 0; i < namesJsonArray.length(); i++) {
+        JSONArray countriesJSONArray = jsonObject.names();
+        database = dbOpenHelper.getWritableDatabase();
+        for (int i = 0; i < countriesJSONArray.length(); i++) {
             try {
-                array.add(namesJsonArray.getString(i));
+                int country_id = i + 1;
+                String country = countriesJSONArray.getString(i);
+                ContentValues valuesCountries = new ContentValues();
+                valuesCountries.put(COLUMN_NAME_COUNTRY_ID, country_id);
+                valuesCountries.put(COLUMN_NAME_COUNTRY, country);
+                database.insert(TABLE_NAME_COUNTRIES, null, valuesCountries);
+
+                JSONArray citiesJSONArray = jsonObject.getJSONArray(country);
+                for (int j = 0; j < citiesJSONArray.length(); j++) {
+                    String city = citiesJSONArray.getString(j);
+                    ContentValues valuesCities = new ContentValues();
+                    valuesCities.put(COLUMN_NAME_CITY, city);
+                    valuesCities.put(COLUMN_NAME_COUNTRY_ID, country_id);
+                    database.insert(TABLE_NAME_CITIES, null, valuesCities);
+                }
+
             } catch (JSONException e) {
                 e.printStackTrace();
             }
         }
-        System.out.println(array);
-        return array;
     }
 }
 
