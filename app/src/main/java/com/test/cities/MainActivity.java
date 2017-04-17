@@ -17,12 +17,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.Scanner;
+import java.util.List;
 
 import static com.test.cities.DBOpenHelper.COLUMN_NAME_CITY;
 import static com.test.cities.DBOpenHelper.COLUMN_NAME_COUNTRY;
@@ -33,10 +29,13 @@ import static com.test.cities.DBOpenHelper.TABLE_NAME_COUNTRIES;
 
 public class MainActivity extends AppCompatActivity {
 
-    ProgressDialog progressDialog;
-    ListView listView;
-    DBOpenHelper dbOpenHelper;
-    SQLiteDatabase database;
+
+    private final String url = "https://raw.githubusercontent.com/David-Haim/CountriesToCitiesJSON/master/countriesToCities.json";
+
+    private ProgressDialog progressDialog;
+    private ListView listView;
+    private DBOpenHelper dbOpenHelper;
+    private SQLiteDatabase database;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,18 +61,19 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private ArrayList<String> readCountries() {
+    private List<String> readCountries() {
         Cursor cursor = database.rawQuery("SELECT * FROM " + TABLE_NAME_COUNTRIES + ";", null);
-        ArrayList<String> arrayList = new ArrayList<>();
+        List<String> arrayList = new ArrayList<>();
         while (cursor.moveToNext()) {
             arrayList.add(cursor.getString(cursor.getColumnIndex(COLUMN_NAME_COUNTRY)));
         }
         cursor.close();
-        System.out.println(database.rawQuery("SELECT * FROM " + TABLE_NAME_CITIES + ";", null).getCount());
         return arrayList;
     }
 
     private class DownloadTask extends AsyncTask<Void, Void, Void> {
+
+        private FileDownloader fileDownloader = new FileDownloader();
 
         @Override
         protected void onPreExecute() {
@@ -86,7 +86,8 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected Void doInBackground(Void... params) {
             try {
-                jsonToDataBase(downloadJSON());
+                String jsonString = fileDownloader.downloadFile(url);
+                jsonToDataBase(jsonString);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -99,24 +100,6 @@ public class MainActivity extends AppCompatActivity {
             ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, readCountries());
             listView.setAdapter(adapter);
             progressDialog.dismiss();
-        }
-    }
-
-    private String downloadJSON() {
-        try {
-            URL url = new URL("https://raw.githubusercontent.com/David-Haim/CountriesToCitiesJSON/master/countriesToCities.json");
-            URLConnection connection = url.openConnection();
-            InputStream inputStream = connection.getInputStream();
-            return readInputStream(inputStream);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private String readInputStream(InputStream inputStream) {
-        try (Scanner s = new Scanner(inputStream).useDelimiter("\\A")) {
-            return s.hasNext() ? s.next() : "";
         }
     }
 
