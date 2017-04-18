@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import org.json.JSONException;
 
@@ -16,7 +17,6 @@ public class MainActivity extends AppCompatActivity {
 
     private final String url = "https://raw.githubusercontent.com/David-Haim/CountriesToCitiesJSON/master/countriesToCities.json";
 
-    private CountriesDao countriesDao = new CountriesDao(this);
     private ProgressDialog progressDialog;
     private ListView listView;
 
@@ -27,26 +27,24 @@ public class MainActivity extends AppCompatActivity {
 
         listView = (ListView) findViewById(R.id.list);
 
-        if (countriesDao.hasEntries()) {
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, countriesDao.readCountries());
-            listView.setAdapter(adapter);
-        } else {
-            new DownloadTask().execute();
-        }
+        new DownloadTask().execute();
+
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent intent = new Intent(MainActivity.this, CitiesActivity.class);
-                intent.putExtra("id", position + 1);
+                String countryName = ((TextView) view).getText().toString();
+                intent.putExtra("countryName", countryName);
                 startActivity(intent);
             }
         });
+
     }
 
 
     private class DownloadTask extends AsyncTask<Void, Void, Void> {
 
-        private FileDownloader fileDownloader = new FileDownloader();
+        private CountriesDao countriesDao = new CountriesDao(MainActivity.this);
 
         @Override
         protected void onPreExecute() {
@@ -58,11 +56,14 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected Void doInBackground(Void... params) {
-            try {
-                String jsonString = fileDownloader.downloadFile(url);
-                countriesDao.jsonToDataBase(jsonString);
-            } catch (JSONException e) {
-                e.printStackTrace();
+            if (countriesDao.isEmpty()) {
+                FileDownloader fileDownloader = new FileDownloader();
+                try {
+                    String jsonString = fileDownloader.downloadFile(url);
+                    countriesDao.jsonToDataBase(jsonString);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             }
             return null;
         }

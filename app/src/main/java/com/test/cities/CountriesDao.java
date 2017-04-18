@@ -65,8 +65,8 @@ public class CountriesDao {
         }
     }
 
-    public boolean hasEntries() {
+    public boolean isEmpty() {
         SQLiteDatabase database = dbOpenHelper.getReadableDatabase();
-        return database.rawQuery("SELECT * FROM " + TABLE_NAME_COUNTRIES + ";", null).getCount() != 0;
+        return database.rawQuery("SELECT * FROM " + TABLE_NAME_COUNTRIES + ";", null).getCount() == 0;
     }
 }

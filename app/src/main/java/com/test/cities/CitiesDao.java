@@ -15,9 +15,9 @@ public class CitiesDao {
         dbOpenHelper = new DBOpenHelper(context);
     }
 
-    public List<String> findCitiesByCountryId(int countryId) {
+    public List<String> findCitiesByCountryName(String countryName) {
         SQLiteDatabase database = dbOpenHelper.getReadableDatabase();
-        Cursor cursor = database.rawQuery("SELECT * FROM " + DBOpenHelper.TABLE_NAME_CITIES + " WHERE " + DBOpenHelper.COLUMN_NAME_COUNTRY_ID + "= " + Integer.toString(countryId) + ";", null);
+        Cursor cursor = database.rawQuery("SELECT cities.city FROM cities, countries WHERE cities.country_id = countries.country_id AND countries.country = '"+countryName+"';", null);
         List<String> arrayList = new ArrayList<>();
         while (cursor.moveToNext()) {
             arrayList.add(cursor.getString(cursor.getColumnIndex(DBOpenHelper.COLUMN_NAME_CITY)));
