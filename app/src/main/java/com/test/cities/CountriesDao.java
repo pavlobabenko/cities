@@ -11,6 +11,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class CountriesDao {
 
@@ -38,28 +39,32 @@ public class CountriesDao {
         database.beginTransaction();
         try {
             for (int i = 0; i < countriesJSONArray.length(); i++) {
-                try {
-                    int country_id = i + 1;
-                    String country = countriesJSONArray.getString(i);
-                    ContentValues valuesCountries = new ContentValues();
-                    valuesCountries.put("country_id", country_id);
-                    valuesCountries.put("country", country);
-                    database.insert("countries", null, valuesCountries);
-                    JSONArray citiesJSONArray = jsonObject.getJSONArray(country);
-                    for (int j = 0; j < citiesJSONArray.length(); j++) {
-                        String city = citiesJSONArray.getString(j);
-                        ContentValues valuesCities = new ContentValues();
-                        valuesCities.put("city", city);
-                        valuesCities.put("country_id", country_id);
-                        database.insert("cities", null, valuesCities);
+                if (!Objects.equals(countriesJSONArray.getString(i), "")) {
+                    try {
+                        int country_id = i + 1;
+                        String country = countriesJSONArray.getString(i);
+                        ContentValues valuesCountries = new ContentValues();
+                        valuesCountries.put("country_id", country_id);
+                        valuesCountries.put("country", country);
+                        database.insert("countries", null, valuesCountries);
+                        JSONArray citiesJSONArray = jsonObject.getJSONArray(country);
+                        for (int j = 0; j < citiesJSONArray.length(); j++) {
+                            if (!Objects.equals(citiesJSONArray.getString(j), "")) {
+                                String city = citiesJSONArray.getString(j);
+                                ContentValues valuesCities = new ContentValues();
+                                valuesCities.put("city", city);
+                                valuesCities.put("country_id", country_id);
+                                database.insert("cities", null, valuesCities);
+                            }
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
-                } catch (JSONException e) {
-                    e.printStackTrace();
                 }
+
             }
             database.setTransactionSuccessful();
-        }
-        finally {
+        } finally {
             database.endTransaction();
         }
     }

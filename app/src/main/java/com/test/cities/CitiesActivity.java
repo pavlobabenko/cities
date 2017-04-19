@@ -15,6 +15,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.Arrays;
+
 public class CitiesActivity extends AppCompatActivity {
 
     private CitiesDao citiesDao = new CitiesDao(this);
@@ -52,13 +56,18 @@ public class CitiesActivity extends AppCompatActivity {
         @Override
         protected String doInBackground(String... city) {
             cityName = city[0];
-            FileDownloader fileDownloader = new FileDownloader();
-            String jsonString = fileDownloader.downloadFile("http://api.geonames.org/wikipediaSearchJSON?q=" + city[0] + "&username=pavlo.babenko ");
-            System.out.println(jsonString);
+            String cityNameInUrl = "";
             try {
-                JSONObject jsonObject = new JSONObject(jsonString);
-                JSONArray jsonArray = jsonObject.getJSONArray("geonames");
-                JSONObject jsonCityInfo = jsonArray.getJSONObject(0);
+                cityNameInUrl = URLEncoder.encode(cityName,"UTF8");
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+            FileDownloader fileDownloader = new FileDownloader();
+            String jsonString = fileDownloader.downloadFile("http://api.geonames.org/wikipediaSearchJSON?q=" + cityNameInUrl + "&username=pavlo.babenko ");
+            try {
+                JSONObject cityInfoJSONObject = new JSONObject(jsonString);
+                JSONArray cityInfoJSONArray = cityInfoJSONObject.getJSONArray("geonames");
+                JSONObject jsonCityInfo = cityInfoJSONArray.getJSONObject(0);
                 cityInfo = jsonCityInfo.getString("summary");
             } catch (JSONException e) {
                 e.printStackTrace();
