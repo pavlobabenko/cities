@@ -20,7 +20,7 @@ public class CitiesDao {
         Cursor cursor = database.rawQuery("SELECT cities.city FROM cities, countries WHERE cities.country_id = countries.country_id AND countries.country = '"+countryName+"';", null);
         List<String> arrayList = new ArrayList<>();
         while (cursor.moveToNext()) {
-            arrayList.add(cursor.getString(cursor.getColumnIndex(DBOpenHelper.COLUMN_NAME_CITY)));
+            arrayList.add(cursor.getString(cursor.getColumnIndex("city")));
         }
         cursor.close();
         return arrayList;

@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        listView = (ListView) findViewById(R.id.list);
+        listView = (ListView) findViewById(R.id.countriesList);
 
         new DownloadTask().execute();
 
@@ -57,11 +57,11 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected Void doInBackground(Void... params) {
-            if (countriesDao.isEmpty()) {
+            if (countriesDao.isDataBaseEmpty()) {
                 FileDownloader fileDownloader = new FileDownloader();
                 try {
                     String jsonString = fileDownloader.downloadFile(url);
-                    countriesDao.jsonToDataBase(jsonString);
+                    countriesDao.insertToDataBase(jsonString);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, countriesDao.readCountries());
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, countriesDao.findCountries());
             listView.setAdapter(adapter);
             progressDialog.dismiss();
         }

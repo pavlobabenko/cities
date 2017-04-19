@@ -4,9 +4,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.test.cities.CitiesActivity">
-<ListView
-    android:id="@+id/cities_list"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
-</ListView>
+    <ListView
+        android:id="@+id/citiesList"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    </ListView>
 </LinearLayout>
