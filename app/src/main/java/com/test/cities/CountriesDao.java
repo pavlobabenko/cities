@@ -41,27 +41,32 @@ public class CountriesDao {
         JSONObject jsonObject = new JSONObject(jsonString);
         JSONArray countriesJSONArray = jsonObject.names();
         SQLiteDatabase database = dbOpenHelper.getWritableDatabase();
-        for (int i = 0; i < countriesJSONArray.length(); i++) {
-            try {
-                int country_id = i + 1;
-                String country = countriesJSONArray.getString(i);
-                ContentValues valuesCountries = new ContentValues();
-                valuesCountries.put(COLUMN_NAME_COUNTRY_ID, country_id);
-                valuesCountries.put(COLUMN_NAME_COUNTRY, country);
-                database.insert(DBOpenHelper.TABLE_NAME_COUNTRIES, null, valuesCountries);
-
-                JSONArray citiesJSONArray = jsonObject.getJSONArray(country);
-                for (int j = 0; j < citiesJSONArray.length(); j++) {
-                    String city = citiesJSONArray.getString(j);
-                    ContentValues valuesCities = new ContentValues();
-                    valuesCities.put(COLUMN_NAME_CITY, city);
-                    valuesCities.put(COLUMN_NAME_COUNTRY_ID, country_id);
-                    database.insert(TABLE_NAME_CITIES, null, valuesCities);
+        database.beginTransaction();
+        try {
+            for (int i = 0; i < countriesJSONArray.length(); i++) {
+                try {
+                    int country_id = i + 1;
+                    String country = countriesJSONArray.getString(i);
+                    ContentValues valuesCountries = new ContentValues();
+                    valuesCountries.put(COLUMN_NAME_COUNTRY_ID, country_id);
+                    valuesCountries.put(COLUMN_NAME_COUNTRY, country);
+                    database.insert(DBOpenHelper.TABLE_NAME_COUNTRIES, null, valuesCountries);
+                    JSONArray citiesJSONArray = jsonObject.getJSONArray(country);
+                    for (int j = 0; j < citiesJSONArray.length(); j++) {
+                        String city = citiesJSONArray.getString(j);
+                        ContentValues valuesCities = new ContentValues();
+                        valuesCities.put(COLUMN_NAME_CITY, city);
+                        valuesCities.put(COLUMN_NAME_COUNTRY_ID, country_id);
+                        database.insert(TABLE_NAME_CITIES, null, valuesCities);
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
-
-            } catch (JSONException e) {
-                e.printStackTrace();
             }
+            database.setTransactionSuccessful();
+        }
+        finally {
+            database.endTransaction();
         }
     }
 

@@ -51,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
             super.onPreExecute();
             progressDialog = new ProgressDialog(MainActivity.this);
             progressDialog.setMessage("Подождите, идет загрузка");
+            progressDialog.setCancelable(false);
             progressDialog.show();
         }
 
